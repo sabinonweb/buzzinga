@@ -1,4 +1,3 @@
-use anyhow::Context;
 use args::Args;
 use clap::Parser;
 use config::config_client;

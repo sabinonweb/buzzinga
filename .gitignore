@@ -2,5 +2,6 @@
 /static
 /tmp 
 /config
+/log
 
 .env
