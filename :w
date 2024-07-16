@@ -22,11 +22,8 @@ macro_rules! env_variable {
 #[derive(Debug, Clone, Deserialize)]
 pub struct AccessToken {
     access_token: String,
-
     token_type: String,
-
     expires_in: i64,
-
     scope: String,
 }
 
@@ -90,9 +87,19 @@ async fn get_token(reddit_config: &RedditConfig) -> anyhow::Result<AccessToken> 
             ("password", &reddit_config.client_password),
         ])
         .send()
-        .await
-        .context("Error while sending a authorization request for Password grant!")?;
+        .await?;
+    // println!("respnse; {:?}", response.text().await?);
 
+    // println!("{:?}", &response.bytes().await?);
+    // if response.status().is_success() {
+    //     let token = response.json().await?;
+    //     println!("token: {:?}", token);
+    //     Ok(token)
+    // } else {
+    //     return Err(Error::msg(response.status()));
+    // }
+    //
+    //
     if response.status().is_success() {
         let token: AccessToken = serde_json::from_str(&response.text().await?)?;
         println!("Deserialized token: {:?}", token);
@@ -102,7 +109,33 @@ async fn get_token(reddit_config: &RedditConfig) -> anyhow::Result<AccessToken> 
             "Failed to fetch access token. Status: {}",
             response.status()
         )))
-    }
+    } // let token: AccessToken = serde_json::from_str(&response.text().await?)?;
+      // println!("acc: {:?}", token);
+      // Ok(AccessToken {
+      //     access_token: String::new(),
+      //     token_type: String::new(),
+      //     expires_in: 36,
+      //     scope: "*".to_string(),
+      // })
+      //
+      // let res: Vec<String> = response.json().await?;
+      //
+      // println!("Response: {:?}", res);
+
+    // match response.status() {
+    //     StatusCode::OK => Ok(AccessToken {
+    //         access_token: response.text().await?.access_token,
+    //     }),
+    //     _ => {
+    //         log::error!("Response couldn't succeed! Error while reading response json!");
+    //         Err(Error::msg("Status: Internal Server Error")
+    //             .context("Response couldn't succeed! Error while reading response json!"))
+    //     }
+    // }
+    // //
+    // Ok(AccessToken {
+    //     access_token: String::from("Setia:"),
+    // })
 }
 
 pub(crate) fn config(args: &Args) -> anyhow::Result<RedditConfig> {
@@ -118,12 +151,7 @@ pub(crate) fn config(args: &Args) -> anyhow::Result<RedditConfig> {
             .read_to_string(&mut file_content)
             .context("Error occured while reading file contents!")?;
 
-        println!("file {:?}", file_content);
-
-        let config: AppConfig = toml::from_str(&file_content.as_str())
-            .context("Error occurred while deserializing TOML content into AppConfig")?;
-
-        config
+        toml::from_str(&file_content.as_str())?
     };
 
     let client_username = env_variable!(CLIENT_USERNAME);

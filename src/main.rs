@@ -1,6 +1,6 @@
 use args::Args;
 use clap::Parser;
-use config::config_client;
+use config::RedditClient;
 
 mod args;
 mod config;
@@ -12,7 +12,13 @@ async fn main() -> anyhow::Result<()> {
     log4rs::init_file(&args.log_config, Default::default())?;
     log::info!("Fetching the environment variables!");
 
-    let reddit_client = config_client(&args).await?;
+    let reddit_client = RedditClient::new(&args).await?;
+
+    let response = reddit_client
+        .client
+        .get("https://reddit.com/api/v1/me")
+        .send()
+        .await?;
 
     Ok(())
 }
