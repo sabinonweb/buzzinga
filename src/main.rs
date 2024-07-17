@@ -1,9 +1,11 @@
 use args::Args;
 use clap::Parser;
 use config::RedditClient;
+use reddit::reddit;
 
 mod args;
 mod config;
+mod reddit;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -19,6 +21,8 @@ async fn main() -> anyhow::Result<()> {
         .get("https://reddit.com/api/v1/me")
         .send()
         .await?;
+
+    reddit(reddit_client).await?;
 
     Ok(())
 }

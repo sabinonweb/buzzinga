@@ -15,11 +15,11 @@ pub(crate) async fn reddit(reddit_client: RedditClient) -> anyhow::Result<()> {
         .send()
         .await?;
 
-    let mut file = File::create_new("./respone.json")?;
+    let mut file = File::create_new("./respone.json");
     let text = response.text().await?;
     println!("text: {:?}", text);
     let content: Value = serde_json::from_str(&text)?;
-    std::io::copy(&mut text.as_bytes(), &mut file)?;
+    std::io::copy(&mut text.as_bytes(), &mut file);
     println!("\ncontent: {:?}\n", content);
 
     // println!("\n\ndoc: {:?}\n\n", doc);

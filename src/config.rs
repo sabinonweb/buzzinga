@@ -1,14 +1,12 @@
 use crate::args::{AppConfig, Args, RedditConfig};
 use anyhow::{Context, Error, Ok};
 use base64::{engine::general_purpose, Engine};
-use clap::builder::Str;
-use log4rs::encode::json::JsonEncoder;
 use reqwest::{
     header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
-    Client, StatusCode,
+    Client,
 };
 use serde::Deserialize;
-use std::{collections::HashMap, fs::File, io::Read, sync::Arc};
+use std::{collections::HashMap, fs::File, io::Read};
 
 const REDDIT_TOKEN_URL: &str = "https://www.reddit.com/api/v1/access_token";
 
@@ -95,7 +93,6 @@ async fn get_token(reddit_config: &RedditConfig) -> anyhow::Result<AccessToken> 
 
     if response.status().is_success() {
         let token: AccessToken = serde_json::from_str(&response.text().await?)?;
-        println!("Deserialized token: {:?}", token);
         Ok(token)
     } else {
         Err(Error::msg(format!(
@@ -117,8 +114,6 @@ pub(crate) fn config(args: &Args) -> anyhow::Result<RedditConfig> {
         config_file
             .read_to_string(&mut file_content)
             .context("Error occured while reading file contents!")?;
-
-        println!("file {:?}", file_content);
 
         let config: AppConfig = toml::from_str(&file_content.as_str())
             .context("Error occurred while deserializing TOML content into AppConfig")?;
