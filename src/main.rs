@@ -6,6 +6,8 @@ use reddit::reddit;
 mod args;
 mod config;
 mod reddit;
+mod types;
+mod utils;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
