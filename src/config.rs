@@ -30,8 +30,11 @@ pub struct AccessToken {
 
 /// Redis OAuth client for interacting with reddit API
 pub struct RedditClient {
-    // reqwest client for interacting with the reddit API
-    pub(crate) client: Client,
+    // reddit instance for interacting with reddit API
+    pub(crate) reddit: roux::Reddit,
+
+    // reddit client for interacting with the reddit API
+    // pub(crate) client: roux::Me,
 
     // access token that is received after authorization
     pub(crate) token: String,
@@ -46,14 +49,17 @@ impl RedditClient {
         let reddit_config = config(&args)?;
 
         let token = get_token(&reddit_config).await?;
-        let mut headers = HeaderMap::new();
-        headers.insert(AUTHORIZATION, token.access_token.parse()?);
-        headers.insert(USER_AGENT, reddit_config.user_agent.parse()?);
 
-        let client = Client::builder().default_headers(headers).build()?;
+        let reddit_instance = roux::Reddit::new(
+            &reddit_config.user_agent,
+            &reddit_config.client_id,
+            &reddit_config.client_secret,
+        )
+        .username(&reddit_config.client_username)
+        .password(&reddit_config.client_password);
 
         Ok(RedditClient {
-            client,
+            reddit: reddit_instance,
             token: token.access_token,
             user_agent: reddit_config.user_agent,
         })

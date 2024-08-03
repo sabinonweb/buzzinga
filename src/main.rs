@@ -19,12 +19,13 @@ async fn main() -> anyhow::Result<()> {
     let reddit_client = RedditClient::new(&args).await?;
 
     let response = reddit_client
-        .client
-        .get("https://reddit.com/api/v1/me")
-        .send()
+        .reddit
+        .subreddit("PublicFreakOut")
+        .await?
+        .hot(25, None)
         .await?;
 
-    reddit(reddit_client).await?;
+    println!("response: {:?}", response);
 
     Ok(())
 }
