@@ -1,7 +1,9 @@
+use std::{fs::File, io::Write};
+
 use args::Args;
 use clap::Parser;
 use config::RedditClient;
-use reddit::reddit;
+use utils::post_type;
 
 mod args;
 mod config;
@@ -20,12 +22,15 @@ async fn main() -> anyhow::Result<()> {
 
     let response = reddit_client
         .reddit
-        .subreddit("PublicFreakOut")
+        .subreddit("Guitar")
         .await?
         .hot(25, None)
         .await?;
 
-    println!("response: {:?}", response);
+    for r in response.data.children {
+        let post_type = post_type(r.data.url.unwrap())?;
+        println!("post_type: {:?}", post_type);
+    }
 
     Ok(())
 }
