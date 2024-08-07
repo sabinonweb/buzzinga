@@ -22,5 +22,8 @@ pub(crate) enum LinkType {
     // https://www.reddit.com/gallery (Images)
     Gallery,
 
+    // Videos specific
+    Video,
+
     None,
 }

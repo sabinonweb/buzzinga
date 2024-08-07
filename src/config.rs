@@ -1,11 +1,13 @@
-use crate::args::{AppConfig, Args, RedditConfig};
+use crate::types::{
+    args::{AppConfig, Args, RedditConfig},
+    config_types::{AccessToken, RedditClient},
+};
 use anyhow::{Context, Error, Ok};
 use base64::{engine::general_purpose, Engine};
 use reqwest::{
     header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
     Client,
 };
-use serde::Deserialize;
 use std::{collections::HashMap, fs::File, io::Read};
 
 const REDDIT_TOKEN_URL: &str = "https://www.reddit.com/api/v1/access_token";
@@ -15,32 +17,6 @@ macro_rules! env_variable {
         std::env::var(stringify!($key))
             .context(concat!(stringify!($key), " not found in dotenv config."))?
     };
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct AccessToken {
-    access_token: String,
-
-    token_type: String,
-
-    expires_in: i64,
-
-    scope: String,
-}
-
-/// Redis OAuth client for interacting with reddit API
-pub struct RedditClient {
-    // reddit instance for interacting with reddit API
-    pub(crate) reddit: roux::Reddit,
-
-    // reddit client for interacting with the reddit API
-    // pub(crate) client: roux::Me,
-
-    // access token that is received after authorization
-    pub(crate) token: String,
-
-    // user agent in the standard format!
-    pub(crate) user_agent: String,
 }
 
 impl RedditClient {

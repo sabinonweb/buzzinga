@@ -1,13 +1,8 @@
-use std::{fs::File, io::Write};
-
-use args::Args;
 use clap::Parser;
-use config::RedditClient;
+use types::{args::Args, config_types::RedditClient};
 use utils::post_type;
 
-mod args;
 mod config;
-mod reddit;
 mod types;
 mod utils;
 
@@ -22,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
 
     let response = reddit_client
         .reddit
-        .subreddit("Guitar")
+        .subreddit("PublicFreakout")
         .await?
         .hot(25, None)
         .await?;
