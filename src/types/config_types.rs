@@ -12,12 +12,13 @@ pub struct AccessToken {
 }
 
 /// Redis OAuth client for interacting with reddit API
+#[derive(Clone)]
 pub struct RedditClient {
     // reddit instance for interacting with reddit API
     pub(crate) reddit: roux::Reddit,
 
     // reddit client for interacting with the reddit API
-    // pub(crate) client: roux::Me,
+    pub(crate) me: roux::Me,
 
     // access token that is received after authorization
     pub(crate) token: String,

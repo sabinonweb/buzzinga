@@ -8,7 +8,12 @@ use reqwest::{
     header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
     Client,
 };
-use std::{collections::HashMap, fs::File, io::Read};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::Read,
+    sync::{Arc, Mutex},
+};
 
 const REDDIT_TOKEN_URL: &str = "https://www.reddit.com/api/v1/access_token";
 
@@ -26,7 +31,7 @@ impl RedditClient {
 
         let token = get_token(&reddit_config).await?;
 
-        let reddit_instance = roux::Reddit::new(
+        let reddit = roux::Reddit::new(
             &reddit_config.user_agent,
             &reddit_config.client_id,
             &reddit_config.client_secret,
@@ -34,8 +39,11 @@ impl RedditClient {
         .username(&reddit_config.client_username)
         .password(&reddit_config.client_password);
 
+        let me = reddit.clone().login().await?;
+
         Ok(RedditClient {
-            reddit: reddit_instance,
+            reddit,
+            me,
             token: token.access_token,
             user_agent: reddit_config.user_agent,
         })

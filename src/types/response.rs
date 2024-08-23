@@ -1,3 +1,4 @@
+use roux::{response::BasicThing, submission::SubmissionData};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -57,21 +58,36 @@ pub struct SecureMedia {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RedditVideo {
-    pub bitrate_kbps: Option<i32>,
+    #[serde(rename = "subreddit")]
+    pub subreddit_name: Option<String>,
 
-    pub dash_url: Option<String>,
+    pub link_flair_text: Option<String>,
 
-    pub duration: Option<f64>,
+    #[serde(rename = "id")]
+    pub post_id: String,
 
-    pub has_audio: Option<bool>,
+    pub over_18: bool,
 
-    pub height: Option<i32>,
+    #[serde(rename = "name")]
+    pub kind_of_reddit_entity: String,
 
-    pub hls_url: Option<String>,
+    #[serde(rename = "url")]
+    pub url_of_the_post: Option<String>,
 
-    pub is_gif: Option<bool>,
+    #[serde(rename = "title")]
+    pub title_of_the_post: String,
+}
 
-    pub width: Option<i32>,
-
-    pub scrubber_media_url: Option<String>,
+impl From<BasicThing<SubmissionData>> for RedditVideo {
+    fn from(value: BasicThing<SubmissionData>) -> Self {
+        Self {
+            subreddit_name: Some(value.data.subreddit),
+            link_flair_text: value.data.link_flair_text,
+            post_id: value.data.id,
+            over_18: value.data.over_18,
+            kind_of_reddit_entity: value.data.name,
+            url_of_the_post: value.data.url,
+            title_of_the_post: value.data.title,
+        }
+    }
 }
