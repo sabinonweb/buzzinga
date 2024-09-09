@@ -1,42 +1,42 @@
-use crate::types::utils_types::LinkType;
+use crate::{data::IMAGE_FORMATS, types::reddit_types::RedditVideo};
+use roux::{response::BasicThing, submission::SubmissionData};
 
-pub(crate) fn post_type(url: String) -> anyhow::Result<LinkType> {
-    let url = url.split("/").collect::<Vec<&str>>();
-    println!("url: {:?}", url);
+pub(crate) fn filter_content(
+    response_collection: &Vec<BasicThing<SubmissionData>>,
+) -> Vec<RedditVideo> {
+    let mut reddit_videos: Vec<RedditVideo> = Vec::new();
 
-    match url[2] {
-        "i.redd.it" => Ok(LinkType::ReddIt(url[3].to_string())),
-        "v.redd.it" => {
-            Ok(differentiate_video_and_images(LinkType::ReddIt(url[3].to_string())).unwrap())
-        }
-        "www.reddit.com" => {
-            if reddit_com(&url[3])? {
-                Ok(LinkType::Gallery)
-            } else {
-                Ok(LinkType::RedditCom)
-            }
+    for response in response_collection {
+        if filter_image_formats(response) {
+            continue;
         }
 
-        _ => return Ok(LinkType::None),
+        if filter_gallery_formatted_urls(response) {
+            continue;
+        }
+
+        let video = RedditVideo::from(response.clone());
+        println!("{:?}\n", video);
+
+        reddit_videos.push(video);
     }
+
+    reddit_videos
 }
 
-fn differentiate_video_and_images(link_type: LinkType) -> Option<LinkType> {
-    match link_type {
-        LinkType::ReddIt(url_segment) => {
-            if url_segment.ends_with(".jpeg") {
-                Some(LinkType::Gallery)
-            } else {
-                Some(LinkType::Video)
-            }
-        }
-        _ => None,
-    }
+pub(crate) fn filter_image_formats(response: &BasicThing<SubmissionData>) -> bool {
+    IMAGE_FORMATS
+        .iter()
+        .any(|img_format| response.clone().data.url.unwrap().ends_with(img_format))
 }
 
-fn reddit_com(url_segment: &str) -> anyhow::Result<bool> {
-    match url_segment {
-        "gallery" => Ok(true),
-        _ => Ok(false),
-    }
+pub(crate) fn filter_gallery_formatted_urls(response: &BasicThing<SubmissionData>) -> bool {
+    response
+        .clone()
+        .data
+        .url
+        .unwrap()
+        .split("/")
+        .collect::<Vec<&str>>()[3]
+        == "gallery"
 }
