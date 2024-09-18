@@ -8,12 +8,7 @@ use reqwest::{
     header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
     Client,
 };
-use std::{
-    collections::HashMap,
-    fs::File,
-    io::Read,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, fs::File, io::Read};
 
 const REDDIT_TOKEN_URL: &str = "https://www.reddit.com/api/v1/access_token";
 
