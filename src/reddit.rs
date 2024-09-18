@@ -1,25 +1,52 @@
 use crate::{
-    data::{ABSURD_CONTENT_SUBREDDITS, GAMING_CONTENT_SUBREDDITS, LIMIT},
-    types::{config_types::RedditClient, reddit_types::RedditVideo},
-    utils::filter_content,
+    data::{
+        ABSURD_CONTENT_SUBREDDITS, GAMING_CONTENT_SUBREDDITS, GENERAL_MEMES_CONTENT_SUBREDDITS,
+        LIMIT,
+    },
+    types::{
+        config_types::RedditClient,
+        reddit_types::{
+            AbsurdContent, Filtration, GamingContent, RedditContent, RedditContentType,
+        },
+    },
 };
 use anyhow::Ok;
 use roux::{response::BasicThing, submission::SubmissionData};
 use std::sync::{Arc, Mutex};
 
-pub(crate) async fn get_videos_collection(
+pub(crate) async fn get_videos_collection<T>(
     reddit_client: Arc<Mutex<RedditClient>>,
     subreddit_collection_type: Vec<&str>,
-) -> anyhow::Result<Vec<RedditVideo>> {
+    _content_type: T,
+) -> anyhow::Result<Vec<RedditContent>>
+where
+    T: Filtration,
+{
     log::info!("Fetching videos from subreddit!");
 
+    log::info!("{:?}", subreddit_collection_type);
     let response_collection =
         get_reddit_response(reddit_client.clone(), subreddit_collection_type).await?;
 
-    // filtering content for we want to post videos only for ABSURD_CONTENT
-    let filtered_videos = filter_content(&response_collection);
+    // filtering content for we want to post videos only
+    let filtered_videos = T::filter_content(&response_collection);
 
     Ok(filtered_videos)
+}
+
+pub(crate) async fn get_content_collection(
+    reddit_client: Arc<Mutex<RedditClient>>,
+    subreddit_collection_type: Vec<&str>,
+) -> anyhow::Result<Vec<RedditContent>> {
+    log::info!("Fetching videos from subreddit!");
+
+    log::info!("{:?}", subreddit_collection_type);
+    let _response_collection =
+        get_reddit_response(reddit_client.clone(), subreddit_collection_type).await?;
+
+    let reddit_content: Vec<RedditContent> = Vec::new();
+
+    Ok(reddit_content)
 }
 
 async fn get_reddit_response(
@@ -50,12 +77,32 @@ async fn get_reddit_response(
     Ok(response_collection)
 }
 
-pub(crate) async fn scrape_for_videos(
+pub(crate) async fn scrape_for_content(
     reddit_client: Arc<Mutex<RedditClient>>,
     video_domain: String,
-) -> anyhow::Result<Vec<RedditVideo>> {
-    match video_domain.as_str() {
-        "absurd" => get_videos_collection(reddit_client, ABSURD_CONTENT_SUBREDDITS.to_vec()).await,
-        "gaming" => get_videos_collection(reddit_client, GAMING_CONTENT_SUBREDDITS.to_vec()).await,
+) -> anyhow::Result<Vec<RedditContent>> {
+    match video_domain.as_str().into() {
+        RedditContentType::AbsurdContent => {
+            get_videos_collection(
+                reddit_client,
+                ABSURD_CONTENT_SUBREDDITS.to_vec(),
+                AbsurdContent,
+            )
+            .await
+        }
+        RedditContentType::GamingContent => {
+            get_videos_collection(
+                reddit_client,
+                GAMING_CONTENT_SUBREDDITS.to_vec(),
+                GamingContent,
+            )
+            .await
+        }
+
+        RedditContentType::GeneralMemes => {
+            get_content_collection(reddit_client, GENERAL_MEMES_CONTENT_SUBREDDITS.to_vec()).await
+        }
+
+        _ => panic!("Cases not handled"),
     }
 }

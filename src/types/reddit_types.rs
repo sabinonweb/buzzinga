@@ -1,8 +1,10 @@
 use roux::{response::BasicThing, submission::SubmissionData};
 use serde::{Deserialize, Serialize};
 
+use crate::data::IMAGE_FORMATS;
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct RedditVideo {
+pub struct RedditContent {
     #[serde(rename = "subreddit")]
     pub subreddit_name: Option<String>,
 
@@ -28,7 +30,7 @@ pub struct RedditVideo {
     pub number_of_comments: u64,
 }
 
-impl From<BasicThing<SubmissionData>> for RedditVideo {
+impl From<BasicThing<SubmissionData>> for RedditContent {
     fn from(value: BasicThing<SubmissionData>) -> Self {
         Self {
             subreddit_name: Some(value.data.subreddit),
@@ -43,6 +45,72 @@ impl From<BasicThing<SubmissionData>> for RedditVideo {
         }
     }
 }
+
+pub struct AbsurdContent;
+pub struct GamingContent;
+pub struct GeneralMemes;
+pub struct NicheMemes;
+pub struct FailContent;
+pub struct PerfectlyTimed;
+pub struct SportsContent;
+pub struct Miscellaneous;
+
+pub trait Filtration {
+    fn filter_content(response_collection: &Vec<BasicThing<SubmissionData>>) -> Vec<RedditContent> {
+        let mut reddit_videos: Vec<RedditContent> = Vec::new();
+
+        for response in response_collection {
+            if Self::filter_image_formats(response)
+                || Self::filter_gallery_formatted_urls(response)
+                || Self::filter_comment_urls(response)
+            {
+                continue;
+            }
+
+            let video = RedditContent::from(response.clone());
+            println!("{:?}\n", video);
+
+            reddit_videos.push(video);
+        }
+
+        reddit_videos
+    }
+
+    fn filter_image_formats(response: &BasicThing<SubmissionData>) -> bool {
+        IMAGE_FORMATS
+            .iter()
+            .any(|img_format| response.clone().data.url.unwrap().ends_with(img_format))
+    }
+
+    fn filter_gallery_formatted_urls(response: &BasicThing<SubmissionData>) -> bool {
+        response
+            .clone()
+            .data
+            .url
+            .unwrap()
+            .split("/")
+            .collect::<Vec<&str>>()[3]
+            == "gallery"
+    }
+
+    fn filter_comment_urls(response: &BasicThing<SubmissionData>) -> bool {
+        let comment_url = response.clone().data.url.unwrap();
+
+        let split_url = comment_url.split("/").collect::<Vec<&str>>();
+
+        if split_url.len() > 5 {
+            split_url[5] == "comments"
+        } else {
+            false
+        }
+    }
+}
+
+impl Filtration for AbsurdContent {}
+impl Filtration for GamingContent {}
+impl Filtration for FailContent {}
+impl Filtration for PerfectlyTimed {}
+impl Filtration for SportsContent {}
 
 #[derive(Clone, Debug)]
 pub enum RedditContentType {
