@@ -1,16 +1,18 @@
 use crate::{
     data::{
-        ABSURD_CONTENT_SUBREDDITS, GAMING_CONTENT_SUBREDDITS, GENERAL_MEMES_CONTENT_SUBREDDITS,
-        LIMIT,
+        ABSURD_CONTENT_SUBREDDITS, BEST_FAILS, GAMING_CONTENT_SUBREDDITS,
+        GENERAL_MEMES_CONTENT_SUBREDDITS, LIMIT, NICHE_MEMES_CONTENT_SUBREDDITS,
+        PERFECTLY_TIMED_CONTENT_SUBREDDITS,
     },
     types::{
         config_types::RedditClient,
         reddit_types::{
-            AbsurdContent, Filtration, GamingContent, RedditContent, RedditContentType,
+            AbsurdContent, FailContent, Filtration, GamingContent, PerfectlyTimed, RedditContent,
+            RedditContentType,
         },
     },
 };
-use anyhow::Ok;
+use anyhow::{anyhow, Ok};
 use roux::{response::BasicThing, submission::SubmissionData};
 use std::sync::{Arc, Mutex};
 
@@ -103,6 +105,32 @@ pub(crate) async fn scrape_for_content(
             get_content_collection(reddit_client, GENERAL_MEMES_CONTENT_SUBREDDITS.to_vec()).await
         }
 
-        _ => panic!("Cases not handled"),
+        RedditContentType::NicheMemes => {
+            get_content_collection(reddit_client, NICHE_MEMES_CONTENT_SUBREDDITS.to_vec()).await
+        }
+
+        RedditContentType::FailContent => {
+            get_videos_collection(reddit_client, BEST_FAILS.to_vec(), FailContent).await
+        }
+
+        RedditContentType::PerfectlyTimed => {
+            get_videos_collection(
+                reddit_client,
+                PERFECTLY_TIMED_CONTENT_SUBREDDITS.to_vec(),
+                PerfectlyTimed,
+            )
+            .await
+        }
+
+        RedditContentType::SportsContent => {
+            get_videos_collection(
+                reddit_client,
+                GAMING_CONTENT_SUBREDDITS.to_vec(),
+                GamingContent,
+            )
+            .await
+        }
+
+        RedditContentType::Miscellaneous => Err(anyhow!("The content type is not supported yet!")),
     }
 }

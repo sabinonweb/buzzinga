@@ -4,7 +4,7 @@ use std::{
     thread,
 };
 
-use anyhow::Context;
+use anyhow::{Context, Ok};
 use chrono::Utc;
 use clap::Parser;
 use cron::Schedule;
@@ -27,12 +27,16 @@ async fn main() -> anyhow::Result<()> {
     log4rs::init_file(&args.log_config, Default::default())?;
     log::info!("Fetching the environment variables!");
 
-    loop {
-        if let Some(datetime) = schedule.upcoming(Utc).take(1).next() {
-            let time_frame = datetime - Utc::now();
-            thread::sleep(time_frame.to_std().unwrap());
-            let reddit_client = Arc::new(Mutex::new(RedditClient::new(&args).await?));
-            scrape_for_content(reddit_client, "absurd_content".to_string()).await?;
-        }
-    }
+    // loop {
+    //     if let Some(datetime) = schedule.upcoming(Utc).take(1).next() {
+    //         let time_frame = datetime - Utc::now();
+    //         thread::sleep(time_frame.to_std().unwrap());
+    //         let reddit_client = Arc::new(Mutex::new(RedditClient::new(&args).await?));
+    //         scrape_for_content(reddit_client, "absurd_content".to_string()).await?;
+    //     }
+    // }
+    let reddit_client = Arc::new(Mutex::new(RedditClient::new(&args).await?));
+    scrape_for_content(reddit_client, "absurd_content".to_string()).await?;
+
+    Ok(())
 }
