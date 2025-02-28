@@ -1,18 +1,20 @@
+use anyhow::{Context, Ok};
+use chrono::Utc;
+use clap::Parser;
+use cron::Schedule;
+use merge::merge_content;
+use reddit::scrape_for_content;
 use std::{
     str::FromStr,
     sync::{Arc, Mutex},
     thread,
 };
-
-use anyhow::{Context, Ok};
-use chrono::Utc;
-use clap::Parser;
-use cron::Schedule;
-use reddit::scrape_for_content;
 use types::{args::Args, config_types::RedditClient};
 
 mod config;
 mod data;
+mod downloader;
+mod merge;
 mod reddit;
 mod types;
 
@@ -36,7 +38,67 @@ async fn main() -> anyhow::Result<()> {
     //     }
     // }
     let reddit_client = Arc::new(Mutex::new(RedditClient::new(&args).await?));
-    scrape_for_content(reddit_client, "absurd_content".to_string()).await?;
+    let reddit_contect = scrape_for_content(reddit_client, "absurd_content".to_string()).await?;
+    merge_content(reddit_contect)?;
 
     Ok(())
 }
+
+// extern crate ffmpeg_next as ffmpeg;
+//
+// use std::env;
+//
+// fn main() {
+//     ffmpeg::init().unwrap();
+//
+//     for arg in env::args().skip(1) {
+//         if let Some(codec) = ffmpeg::decoder::find_by_name(&arg) {
+//             println!("type: decoder");
+//             println!("\t id: {:?}", codec.id());
+//             println!("\t name: {}", codec.name());
+//             println!("\t description: {}", codec.description());
+//             println!("\t medium: {:?}", codec.medium());
+//             println!("\t capabilities: {:?}", codec.capabilities());
+//
+//             if let Some(profiles) = codec.profiles() {
+//                 println!("\t profiles: {:?}", profiles.collect::<Vec<_>>());
+//             } else {
+//                 println!("\t profiles: none");
+//             }
+//
+//             if let Ok(video) = codec.video() {
+//                 if let Some(rates) = video.rates() {
+//                     println!("\t rates: {:?}", rates.collect::<Vec<_>>());
+//                 } else {
+//                     println!("\t rates: any");
+//                 }
+//
+//                 if let Some(formats) = video.formats() {
+//                     println!("\t formats: {:?}", formats.collect::<Vec<_>>());
+//                 } else {
+//                     println!("\t formats: any");
+//                 }
+//             }
+//
+//             if let Ok(audio) = codec.audio() {
+//                 if let Some(rates) = audio.rates() {
+//                     println!("\t audio_rates: {:?}", rates.collect::<Vec<_>>());
+//                 } else {
+//                     println!("\t audio_rates: any");
+//                 }
+//
+//                 if let Some(formats) = audio.formats() {
+//                     println!("\t audio_formats: {:?}", formats.collect::<Vec<_>>());
+//                 } else {
+//                     println!("\t audio_formats: any");
+//                 }
+//
+//                 if let Some(layouts) = audio.channel_layouts() {
+//                     println!("\t channel_layouts: {:?}", layouts.collect::<Vec<_>>());
+//                 } else {
+//                     println!("\t channel_layouts: any");
+//                 }
+//             }
+//         }
+//     }
+// }

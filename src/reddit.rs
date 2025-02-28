@@ -7,8 +7,8 @@ use crate::{
     types::{
         config_types::RedditClient,
         reddit_types::{
-            AbsurdContent, FailContent, Filtration, GamingContent, PerfectlyTimed, RedditContent,
-            RedditContentType,
+            AbsurdContent, FailContent, Filtration, GamingContent, GeneralMemes, NicheMemes,
+            PerfectlyTimed, RedditContent, RedditContentType,
         },
     },
 };
@@ -19,7 +19,7 @@ use std::sync::{Arc, Mutex};
 pub(crate) async fn get_videos_collection<T>(
     reddit_client: Arc<Mutex<RedditClient>>,
     subreddit_collection_type: Vec<&str>,
-    _content_type: T,
+    content_type: T,
 ) -> anyhow::Result<Vec<RedditContent>>
 where
     T: Filtration,
@@ -29,8 +29,8 @@ where
     log::info!("{:?}", subreddit_collection_type);
     let response_collection =
         get_reddit_response(reddit_client.clone(), subreddit_collection_type).await?;
-
     // filtering content for we want to post videos only
+
     let filtered_videos = T::filter_content(&response_collection);
 
     Ok(filtered_videos)

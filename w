@@ -1,7 +1,7 @@
 use roux::{response::BasicThing, submission::SubmissionData};
 use serde::{Deserialize, Serialize};
 
-use crate::{data::IMAGE_FORMATS, types::args::RedditConfig};
+use crate::data::IMAGE_FORMATS;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RedditContent {
@@ -33,15 +33,15 @@ pub struct RedditContent {
 impl From<&BasicThing<SubmissionData>> for RedditContent {
     fn from(value: &BasicThing<SubmissionData>) -> Self {
         Self {
-            subreddit_name: Some(value.data.subreddit.clone()),
-            link_flair_text: value.data.link_flair_text.clone(),
-            post_id: value.data.id.clone(),
-            over_18: value.data.over_18.clone(),
-            kind_of_reddit_entity: value.data.name.clone(),
-            url_of_the_post: value.data.url.clone(),
-            title_of_the_post: value.data.title.clone(),
-            upvote_ratio: value.data.upvote_ratio.clone(),
-            number_of_comments: value.data.num_comments.clone(),
+            subreddit_name: Some(value.data.subreddit),
+            link_flair_text: value.data.link_flair_text,
+            post_id: value.data.id,
+            over_18: value.data.over_18,
+            kind_of_reddit_entity: value.data.name,
+            url_of_the_post: value.data.url,
+            title_of_the_post: value.data.title,
+            upvote_ratio: value.data.upvote_ratio,
+            number_of_comments: value.data.num_comments,
         }
     }
 }
@@ -59,7 +59,7 @@ pub trait Filtration {
     fn filter_content(response_collection: &Vec<BasicThing<SubmissionData>>) -> Vec<RedditContent> {
         let mut reddit_videos: Vec<RedditContent> = Vec::new();
 
-        for response in response_collection.into_iter() {
+        for response in response_collection {
             if Self::filter_image_formats(response)
                 || Self::filter_gallery_formatted_urls(response)
                 || Self::filter_comment_urls(response)
@@ -67,7 +67,7 @@ pub trait Filtration {
                 continue;
             }
 
-            let video = RedditContent::from(response);
+            let video = RedditContent::from(response.clone());
             println!("{:?}\n", video);
 
             reddit_videos.push(video);
@@ -79,14 +79,14 @@ pub trait Filtration {
     fn filter_image_formats(response: &BasicThing<SubmissionData>) -> bool {
         IMAGE_FORMATS
             .iter()
-            .any(|img_format| response.data.url.clone().unwrap().ends_with(img_format))
+            .any(|img_format| response.clone().data.url.unwrap().ends_with(img_format))
     }
 
     fn filter_gallery_formatted_urls(response: &BasicThing<SubmissionData>) -> bool {
         response
+            .clone()
             .data
             .url
-            .clone()
             .unwrap()
             .split("/")
             .collect::<Vec<&str>>()[3]
@@ -94,7 +94,7 @@ pub trait Filtration {
     }
 
     fn filter_comment_urls(response: &BasicThing<SubmissionData>) -> bool {
-        let comment_url = response.data.url.as_ref().unwrap();
+        let comment_url = response.clone().data.url.unwrap();
 
         let split_url = comment_url.split("/").collect::<Vec<&str>>();
 
