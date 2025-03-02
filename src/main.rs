@@ -1,8 +1,10 @@
+#![allow(dead_code)]
+
 use anyhow::{Context, Ok};
 use chrono::Utc;
 use clap::Parser;
 use cron::Schedule;
-use merge::merge_content;
+use merge::{merge_content, read_from_source};
 use reddit::scrape_for_content;
 use std::{
     str::FromStr,
@@ -28,18 +30,22 @@ async fn main() -> anyhow::Result<()> {
 
     log4rs::init_file(&args.log_config, Default::default())?;
     log::info!("Fetching the environment variables!");
-
-    // loop {
-    //     if let Some(datetime) = schedule.upcoming(Utc).take(1).next() {
-    //         let time_frame = datetime - Utc::now();
-    //         thread::sleep(time_frame.to_std().unwrap());
-    //         let reddit_client = Arc::new(Mutex::new(RedditClient::new(&args).await?));
-    //         scrape_for_content(reddit_client, "absurd_content".to_string()).await?;
-    //     }
-    // }
+    //
+    // // loop {
+    // //     if let Some(datetime) = schedule.upcoming(Utc).take(1).next() {
+    // //         let time_frame = datetime - Utc::now();
+    // //         thread::sleep(time_frame.to_std().unwrap());
+    // //         let reddit_client = Arc::new(Mutex::new(RedditClient::new(&args).await?));
+    // //         scrape_for_content(reddit_client, "absurd_content".to_string()).await?;
+    // //     }
+    // // }
     let reddit_client = Arc::new(Mutex::new(RedditClient::new(&args).await?));
-    let reddit_contect = scrape_for_content(reddit_client, "absurd_content".to_string()).await?;
-    merge_content(reddit_contect)?;
+    let reddit_content =
+        scrape_for_content(reddit_client.clone(), "absurd_content".to_string()).await?;
+    // merge_content(reddit_content)?;
+    let one = String::from("https://www.reddit.com/r/WTF/comments/1igo931/step_ladder/");
+    let twp = String::from("https://v.redd.it/lfqpncoygple1");
+    read_from_source(one, twp, reddit_client.clone()).await;
 
     Ok(())
 }

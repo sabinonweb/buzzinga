@@ -8,18 +8,18 @@ use crate::{
         config_types::RedditClient,
         reddit_types::{
             AbsurdContent, FailContent, Filtration, GamingContent, GeneralMemes, NicheMemes,
-            PerfectlyTimed, RedditContent, RedditContentType,
+            PerfectlyTimed, RedditContent, RedditContentType, RedditDashJsonResponse,
         },
     },
 };
-use anyhow::{anyhow, Ok};
+use anyhow::anyhow;
 use roux::{response::BasicThing, submission::SubmissionData};
 use std::sync::{Arc, Mutex};
 
 pub(crate) async fn get_videos_collection<T>(
     reddit_client: Arc<Mutex<RedditClient>>,
     subreddit_collection_type: Vec<&str>,
-    content_type: T,
+    _content_type: T,
 ) -> anyhow::Result<Vec<RedditContent>>
 where
     T: Filtration,
@@ -32,6 +32,7 @@ where
     // filtering content for we want to post videos only
 
     let filtered_videos = T::filter_content(&response_collection);
+    get_content_json(reddit_client, filtered_videos.clone()).await;
 
     Ok(filtered_videos)
 }
@@ -76,7 +77,46 @@ async fn get_reddit_response(
         }
     }
 
+    // println!(
+    //     "Response Collecrion: {:?}",
+    //     serde_json::to_string_pretty(&response_collection)
+    // );
     Ok(response_collection)
+}
+
+pub(crate) async fn get_content_json(
+    reddit_client: Arc<Mutex<RedditClient>>,
+    reddit_content: Vec<RedditContent>,
+) {
+    let reddit_client = reddit_client.lock().unwrap();
+
+    /* for content in reddit_content { */
+    let res = reddit_client
+        .client
+        .get("https://www.reddit.com/r/PublicFreakout/comments/1j17pct/senator_marshall_rks_flees_his_own_town_hall.json")
+        .form(&reddit_client.params)
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap();
+
+    let json_response: Result<RedditDashJsonResponse, _> = serde_json::from_str(&res);
+
+    match json_response {
+        Ok(json_res) => {
+            println!("Video_details: {:?}", json_res);
+        }
+
+        Err(ref e) => {
+            log::error!("Deserialization Error for RedditDashJsonResponse: {:?}", e);
+            println!("Deserialization Error for RedditDashJsonResponse: {:?}", e);
+        }
+    }
+
+    println!("Response: {:?}\n", json_response);
+    // }
 }
 
 pub(crate) async fn scrape_for_content(

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -19,6 +21,12 @@ pub struct RedditClient {
 
     // reddit client for interacting with the reddit API
     pub(crate) me: roux::Me,
+
+    // OAuth instance of client for requesting .MPD because roux itself seemed to not allow this
+    pub(crate) client: reqwest::Client,
+
+    // params for the OAuth client
+    pub(crate) params: HashMap<String, String>,
 
     // access token that is received after authorization
     pub(crate) token: String,

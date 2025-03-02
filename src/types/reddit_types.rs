@@ -46,6 +46,17 @@ impl From<&BasicThing<SubmissionData>> for RedditContent {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct RedditResponse {
+    pub reddit_content: RedditContent,
+
+    pub dash_url: Option<String>,
+
+    pub video_url: Option<String>,
+
+    pub audio_url: Option<String>,
+}
+
 pub struct AbsurdContent;
 pub struct GamingContent;
 pub struct GeneralMemes;
@@ -60,12 +71,12 @@ pub trait Filtration {
         let mut reddit_videos: Vec<RedditContent> = Vec::new();
 
         for response in response_collection.into_iter() {
-            if Self::filter_image_formats(response)
-                || Self::filter_gallery_formatted_urls(response)
-                || Self::filter_comment_urls(response)
-            {
-                continue;
-            }
+            // if Self::filter_image_formats(response)
+            //     || Self::filter_gallery_formatted_urls(response)
+            //     || Self::filter_comment_urls(response)
+            // {
+            // continue;
+            // }
 
             let video = RedditContent::from(response);
             println!("{:?}\n", video);
@@ -151,4 +162,46 @@ where
             _ => RedditContentType::Miscellaneous,
         }
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RedditDashJsonResponse {
+    pub(crate) kind: String,
+
+    pub(crate) data: RedditData,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RedditData {
+    pub(crate) children: Vec<RedditChild>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct RedditChild {
+    pub(crate) data: RedditChildData,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct RedditChildData {
+    pub(crate) title: String,
+
+    pub(crate) name: String,
+
+    pub(crate) subreddit_name: String,
+
+    pub(crate) secure_media: Option<SecureMedia>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct SecureMedia {
+    pub(crate) reddit_video: Option<RedditVideo>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub(crate) struct RedditVideo {
+    pub(crate) fallback_url: String,
+
+    pub(crate) dash_url: String,
+
+    pub(crate) hls_url: String,
 }

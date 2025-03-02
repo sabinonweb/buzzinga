@@ -5,7 +5,7 @@ use crate::types::{
 use anyhow::{Context, Error, Ok};
 use base64::{engine::general_purpose, Engine};
 use reqwest::{
-    header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
+    header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
     Client,
 };
 use std::{collections::HashMap, fs::File, io::Read};
@@ -36,9 +36,33 @@ impl RedditClient {
 
         let me = reddit.clone().login().await?;
 
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(&token.access_token).unwrap(),
+        );
+
+        let mut params = HashMap::new();
+        params.insert("grant_type".to_string(), "password".to_string());
+        params.insert(
+            "username".to_string(),
+            reddit_config.client_username.to_string(),
+        );
+        params.insert(
+            "password".to_string(),
+            reddit_config.client_password.to_string(),
+        );
+
+        let client = reqwest::Client::builder()
+            .user_agent(&reddit_config.user_agent)
+            .default_headers(headers)
+            .build()?;
+
         Ok(RedditClient {
             reddit,
             me,
+            client,
+            params,
             token: token.access_token,
             user_agent: reddit_config.user_agent,
         })
