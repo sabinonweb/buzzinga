@@ -102,11 +102,11 @@ pub(crate) async fn get_content_json(
         .await
         .unwrap();
 
-    let json_response: Result<RedditDashJsonResponse, _> = serde_json::from_str(&res);
+    let json_response: Result<Vec<RedditDashJsonResponse>, _> = serde_json::from_str(&res);
 
     match json_response {
-        Ok(json_res) => {
-            println!("Video_details: {:?}", json_res);
+        Ok(ref json_res) => {
+            println!("Video_details: {:?}\n", json_res);
         }
 
         Err(ref e) => {
@@ -115,7 +115,6 @@ pub(crate) async fn get_content_json(
         }
     }
 
-    println!("Response: {:?}\n", json_response);
     // }
 }
 

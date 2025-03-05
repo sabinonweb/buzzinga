@@ -166,9 +166,9 @@ where
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RedditDashJsonResponse {
-    pub(crate) kind: String,
+    pub(crate) kind: Option<String>,
 
-    pub(crate) data: RedditData,
+    pub(crate) data: Option<RedditData>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -178,16 +178,17 @@ pub struct RedditData {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct RedditChild {
+    pub(crate) kind: Option<String>,
     pub(crate) data: RedditChildData,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct RedditChildData {
-    pub(crate) title: String,
+    pub(crate) title: Option<String>,
 
-    pub(crate) name: String,
+    pub(crate) name: Option<String>,
 
-    pub(crate) subreddit_name: String,
+    pub(crate) subreddit_name_prefixed: Option<String>,
 
     pub(crate) secure_media: Option<SecureMedia>,
 }
@@ -199,9 +200,9 @@ pub(crate) struct SecureMedia {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct RedditVideo {
-    pub(crate) fallback_url: String,
+    pub(crate) fallback_url: Option<String>,
 
-    pub(crate) dash_url: String,
+    pub(crate) dash_url: Option<String>,
 
-    pub(crate) hls_url: String,
+    pub(crate) hls_url: Option<String>,
 }
