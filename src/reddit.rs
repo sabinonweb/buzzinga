@@ -31,7 +31,7 @@ where
         get_reddit_response(reddit_client.clone(), subreddit_collection_type).await?;
     // filtering content for we want to post videos only
 
-    let filtered_videos = T::filter_content(&response_collection);
+    let filtered_videos = T::filter_content(response_collection.clone());
     get_content_json(reddit_client, filtered_videos.clone()).await;
 
     Ok(filtered_videos)
@@ -77,10 +77,6 @@ async fn get_reddit_response(
         }
     }
 
-    // println!(
-    //     "Response Collecrion: {:?}",
-    //     serde_json::to_string_pretty(&response_collection)
-    // );
     Ok(response_collection)
 }
 
@@ -90,32 +86,60 @@ pub(crate) async fn get_content_json(
 ) {
     let reddit_client = reddit_client.lock().unwrap();
 
-    /* for content in reddit_content { */
-    let res = reddit_client
-        .client
-        .get("https://www.reddit.com/r/PublicFreakout/comments/1j17pct/senator_marshall_rks_flees_his_own_town_hall.json")
-        .form(&reddit_client.params)
-        .send()
-        .await
-        .unwrap()
-        .text()
-        .await
-        .unwrap();
+    for content in reddit_content {
+        println!("URL: {:#?}", &content.clone().url_of_the_post.unwrap()[..]);
+        let ress = reddit_client
+            .client
+            .get(&content.url_of_the_post.unwrap()[..])
+            .form(&reddit_client.params)
+            .send()
+            .await
+            .unwrap();
 
-    let json_response: Result<Vec<RedditDashJsonResponse>, _> = serde_json::from_str(&res);
+        println!("Res Status: {:?}", ress.status());
 
-    match json_response {
-        Ok(ref json_res) => {
-            println!("Video_details: {:?}\n", json_res);
-        }
+        let res = ress.text().await.unwrap();
+        // println!("Res: {:#?}", res);
+        let json_response: Result<Vec<RedditDashJsonResponse>, _> = serde_json::from_str(&res);
+        // println!("json_response: {:#?}", json_response);
 
-        Err(ref e) => {
-            log::error!("Deserialization Error for RedditDashJsonResponse: {:?}", e);
-            println!("Deserialization Error for RedditDashJsonResponse: {:?}", e);
+        match json_response {
+            Ok(ref json_res) => {
+                for res in json_res {
+                    if res
+                        .data
+                        .clone()
+                        .unwrap()
+                        .children
+                        .iter()
+                        .any(|reddit_child| reddit_child.data.secure_media.is_some())
+                    {
+                        log::info!("Successful Serialization of Reddit Response!");
+                        println!(
+                            "Predicate: {:?}",
+                            res.data
+                                .clone()
+                                .unwrap()
+                                .children
+                                .iter()
+                                .any(|reddit_child| reddit_child
+                                    .data
+                                    .secure_media
+                                    .clone()
+                                    .unwrap()
+                                    .reddit_video
+                                    .is_some())
+                        );
+                        println!("Video_details: {:#?}\n", json_res);
+                    }
+                }
+            }
+
+            Err(ref e) => {
+                log::error!("Deserialization Error for RedditDashJsonResponse: {:?}", e);
+            }
         }
     }
-
-    // }
 }
 
 pub(crate) async fn scrape_for_content(

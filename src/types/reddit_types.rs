@@ -30,8 +30,8 @@ pub struct RedditContent {
     pub number_of_comments: u64,
 }
 
-impl From<&BasicThing<SubmissionData>> for RedditContent {
-    fn from(value: &BasicThing<SubmissionData>) -> Self {
+impl From<BasicThing<SubmissionData>> for RedditContent {
+    fn from(value: BasicThing<SubmissionData>) -> Self {
         Self {
             subreddit_name: Some(value.data.subreddit.clone()),
             link_flair_text: value.data.link_flair_text.clone(),
@@ -67,16 +67,16 @@ pub struct SportsContent;
 pub struct Miscellaneous;
 
 pub trait Filtration {
-    fn filter_content(response_collection: &Vec<BasicThing<SubmissionData>>) -> Vec<RedditContent> {
+    fn filter_content(response_collection: Vec<BasicThing<SubmissionData>>) -> Vec<RedditContent> {
         let mut reddit_videos: Vec<RedditContent> = Vec::new();
 
-        for response in response_collection.into_iter() {
-            // if Self::filter_image_formats(response)
-            //     || Self::filter_gallery_formatted_urls(response)
-            //     || Self::filter_comment_urls(response)
-            // {
-            // continue;
-            // }
+        for mut response in response_collection.into_iter() {
+            response.data.url = Some(Self::build_url(&response));
+            if Self::filter_image_formats(&response)
+                || Self::filter_gallery_formatted_urls(&response)
+            {
+                continue;
+            }
 
             let video = RedditContent::from(response);
             println!("{:?}\n", video);
@@ -114,6 +114,13 @@ pub trait Filtration {
         } else {
             false
         }
+    }
+
+    fn build_url(response: &BasicThing<SubmissionData>) -> String {
+        format!(
+            "https://www.reddit.com/r/{}/comments/{}/.json",
+            response.data.subreddit, response.data.id
+        )
     }
 }
 
@@ -179,6 +186,7 @@ pub struct RedditData {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct RedditChild {
     pub(crate) kind: Option<String>,
+
     pub(crate) data: RedditChildData,
 }
 
@@ -200,9 +208,12 @@ pub(crate) struct SecureMedia {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct RedditVideo {
+    // URL of the video
     pub(crate) fallback_url: Option<String>,
 
+    // URL of the audio
     pub(crate) dash_url: Option<String>,
 
+    // URL of the m3u8 playlist file
     pub(crate) hls_url: Option<String>,
 }
