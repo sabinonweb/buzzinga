@@ -106,31 +106,16 @@ pub(crate) async fn get_content_json(
         match json_response {
             Ok(ref json_res) => {
                 for res in json_res {
-                    if res
-                        .data
-                        .clone()
-                        .unwrap()
-                        .children
-                        .iter()
-                        .any(|reddit_child| reddit_child.data.secure_media.is_some())
-                    {
-                        log::info!("Successful Serialization of Reddit Response!");
-                        println!(
-                            "Predicate: {:?}",
-                            res.data
-                                .clone()
-                                .unwrap()
-                                .children
-                                .iter()
-                                .any(|reddit_child| reddit_child
-                                    .data
-                                    .secure_media
-                                    .clone()
-                                    .unwrap()
-                                    .reddit_video
-                                    .is_some())
-                        );
-                        println!("Video_details: {:#?}\n", json_res);
+                    if let Some(data) = &res.data {
+                        for reddit_child in &data.children {
+                            if reddit_child.data.secure_media.is_some() {
+                                log::info!(
+                                    "Serialization Successful for {}",
+                                    reddit_child.data.name.clone().unwrap()
+                                );
+                                println!("Response: {:#?}", reddit_child);
+                            }
+                        }
                     }
                 }
             }
