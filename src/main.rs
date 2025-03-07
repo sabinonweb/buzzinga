@@ -19,6 +19,7 @@ mod downloader;
 mod merge;
 mod reddit;
 mod types;
+mod utils;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

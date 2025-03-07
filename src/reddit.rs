@@ -4,13 +4,16 @@ use crate::{
         GENERAL_MEMES_CONTENT_SUBREDDITS, LIMIT, NICHE_MEMES_CONTENT_SUBREDDITS,
         PERFECTLY_TIMED_CONTENT_SUBREDDITS,
     },
+    downloader::downloader,
     types::{
         config_types::RedditClient,
         reddit_types::{
             AbsurdContent, FailContent, Filtration, GamingContent, GeneralMemes, NicheMemes,
-            PerfectlyTimed, RedditContent, RedditContentType, RedditDashJsonResponse,
+            PerfectlyTimed, RedditContent, RedditContentType,
         },
+        response::{Media, RedditDashJsonResponse},
     },
+    utils::reddit::build_audio_url,
 };
 use anyhow::anyhow;
 use roux::{response::BasicThing, submission::SubmissionData};
@@ -81,24 +84,24 @@ async fn get_reddit_response(
 }
 
 pub(crate) async fn get_content_json(
-    reddit_client: Arc<Mutex<RedditClient>>,
+    redd_client: Arc<Mutex<RedditClient>>,
     reddit_content: Vec<RedditContent>,
 ) {
-    let reddit_client = reddit_client.lock().unwrap();
+    let reddit_client = redd_client.lock().unwrap();
 
     for content in reddit_content {
-        println!("URL: {:#?}", &content.clone().url_of_the_post.unwrap()[..]);
-        let ress = reddit_client
+        // println!("URL: {:#?}", &content.clone().url_of_the_post.unwrap()[..]);
+        let res = reddit_client
             .client
             .get(&content.url_of_the_post.unwrap()[..])
             .form(&reddit_client.params)
             .send()
             .await
+            .unwrap()
+            .text()
+            .await
             .unwrap();
 
-        println!("Res Status: {:?}", ress.status());
-
-        let res = ress.text().await.unwrap();
         // println!("Res: {:#?}", res);
         let json_response: Result<Vec<RedditDashJsonResponse>, _> = serde_json::from_str(&res);
         // println!("json_response: {:#?}", json_response);
@@ -113,7 +116,16 @@ pub(crate) async fn get_content_json(
                                     "Serialization Successful for {}",
                                     reddit_child.data.name.clone().unwrap()
                                 );
-                                println!("Response: {:#?}", reddit_child);
+                                if let Some(url) =
+                                    reddit_child.data.secure_media.clone().unwrap().reddit_video
+                                {
+                                    let audio_url = build_audio_url(url.fallback_url.unwrap());
+                                    println!("Audio: {:?}\n", audio_url);
+                                    let media = Media::new(reddit_child.clone(), audio_url);
+                                    println!("Media: {:#?}", media);
+                                    downloader(media.unwrap(), reddit_client.clone()).await;
+                                    // println!("Response: {:#?}", reddit_child);
+                                }
                             }
                         }
                     }
