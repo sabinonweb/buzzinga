@@ -1,31 +1,106 @@
 use crate::types::{config_types::RedditClient, response::Media};
 use ::log::{error, info};
-use ffmpeg_next::log;
-use std::{fs::File, io::Write};
+use roux::me::response;
+use std::{fs::File, io::Write, process::Command};
+use tokio::join;
 
-pub async fn downloader(reddit_media: Media, reddit_client: RedditClient) {
-    println!("Downloader");
-    println!("Reddit Media URL: {:?}", reddit_media.clone().video_url);
-    let response = match reddit_client
-        .client
-        .get(&reddit_media.video_url.clone()[..])
-        .send()
+pub async fn download_media(reddit_media: Media, reddit_client: RedditClient) {
+    info!("Starting download for {}", reddit_media.title);
+    let video_file_name = &format!(
+        "/Users/sabinonweb/Documents/Projects/buzzinga/src/media/{}.mp4",
+        reddit_media.title
+    );
+    let audio_file_name = &format!(
+        "/Users/sabinonweb/Documents/Projects/buzzinga/src/media/{}-audio.mp4",
+        reddit_media.title
+    );
+    println!(
+        "\nCurrent directory: {:?}\n",
+        std::env::current_dir().unwrap()
+    );
+
+    let (_video_response, _audio_reponse) = join!(
+        downloader(
+            reddit_media.video_url.clone(),
+            reddit_client.clone(),
+            video_file_name,
+            reddit_media.title.clone()
+        ),
+        downloader(
+            reddit_media.audio_url,
+            reddit_client,
+            audio_file_name,
+            reddit_media.title
+        )
+    );
+}
+
+pub async fn download(dash_urls: Vec<String>) {
+    let mut download_tasks = Vec::new();
+
+    let mut j = 0;
+    for (_i, url) in dash_urls.iter().enumerate() {
+        log::info!("Number: {:?}", j);
+        let url = url.clone();
+        let file_path = format!(
+            "/Users/sabinonweb/Documents/Projects/buzzinga/src/media/clip_{}.mp4",
+            j
+        );
+        j = j + 1;
+
+        download_tasks.push(tokio::task::spawn_blocking(move || {
+            println!("Downloading {} -> {}", url, file_path);
+            let status = Command::new("ffmpeg")
+                .arg("-y")
+                .arg("-i")
+                .arg(url.clone())
+                .arg("-c")
+                .arg("copy")
+                .arg(&file_path)
+                .status()
+                .expect("Failed to run ffmpeg");
+
+            if !status.success() {
+                eprintln!("Failed downloading {}", url);
+            }
+
+            file_path
+        }));
+    }
+
+    let clip_paths: Vec<String> = futures::future::join_all(download_tasks)
         .await
-    {
+        .into_iter()
+        .filter_map(|res| res.ok())
+        .collect();
+
+    let list_path = "/Users/sabinonweb/Documents/Projects/buzzinga/src/media/list.txt";
+    let mut list_file = File::create(list_path).unwrap();
+
+    for path in clip_paths {
+        writeln!(list_file, "file {}", path).unwrap();
+    }
+}
+
+pub async fn downloader(
+    reddit_media_url: String,
+    reddit_client: RedditClient,
+    file_name: &str,
+    title: String,
+) {
+    println!("Downloader");
+    let response = match reddit_client.client.get(&reddit_media_url).send().await {
         Ok(response) => {
-            info!("Video {} successfully downloaded!", reddit_media.video_url);
+            info!("Video {} successfully downloaded!", reddit_media_url);
             Ok(response)
         }
         Err(e) => {
-            info!(
-                "Error while downloading the video: {}: {}",
-                reddit_media.title, e
-            );
+            info!("Error while downloading the video: {}: {}", title, e);
             Err(e)
         }
     };
-    let file_name = format!("{}.mp4", reddit_media.title);
-    let mut file = match File::create(file_name.clone()) {
+
+    let mut file = match File::create(file_name) {
         Ok(file) => {
             info!("File {} successfully created!", file_name);
             file

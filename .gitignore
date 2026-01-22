@@ -3,6 +3,8 @@
 /tmp 
 /config
 /log
+/media
+*.mp4
 
 .env
 .DS_Store

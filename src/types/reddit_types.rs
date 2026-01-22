@@ -170,3 +170,9 @@ where
         }
     }
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum MediaType {
+    Audio,
+    Video,
+}

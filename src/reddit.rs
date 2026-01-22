@@ -4,7 +4,7 @@ use crate::{
         GENERAL_MEMES_CONTENT_SUBREDDITS, LIMIT, NICHE_MEMES_CONTENT_SUBREDDITS,
         PERFECTLY_TIMED_CONTENT_SUBREDDITS,
     },
-    downloader::downloader,
+    downloader::download,
     types::{
         config_types::RedditClient,
         reddit_types::{
@@ -34,7 +34,7 @@ where
         get_reddit_response(reddit_client.clone(), subreddit_collection_type).await?;
     // filtering content for we want to post videos only
 
-    let filtered_videos = T::filter_content(response_collection.clone());
+    let filtered_videos = T::filter_content(response_collection);
     get_content_json(reddit_client, filtered_videos.clone()).await;
 
     Ok(filtered_videos)
@@ -88,6 +88,7 @@ pub(crate) async fn get_content_json(
     reddit_content: Vec<RedditContent>,
 ) {
     let reddit_client = redd_client.lock().unwrap();
+    let mut dash_urls = Vec::new();
 
     for content in reddit_content {
         // println!("URL: {:#?}", &content.clone().url_of_the_post.unwrap()[..]);
@@ -123,8 +124,8 @@ pub(crate) async fn get_content_json(
                                     println!("Audio: {:?}\n", audio_url);
                                     let media = Media::new(reddit_child.clone(), audio_url);
                                     println!("Media: {:#?}", media);
-                                    downloader(media.unwrap(), reddit_client.clone()).await;
-                                    // println!("Response: {:#?}", reddit_child);
+                                    dash_urls.push(media.unwrap().dash_url);
+                                    log::info!("Dash URL: {:?}", dash_urls);
                                 }
                             }
                         }
@@ -137,12 +138,15 @@ pub(crate) async fn get_content_json(
             }
         }
     }
+    log::info!("Dash urls: {:?}", dash_urls);
+    download(dash_urls).await;
 }
 
 pub(crate) async fn scrape_for_content(
     reddit_client: Arc<Mutex<RedditClient>>,
     video_domain: String,
 ) -> anyhow::Result<Vec<RedditContent>> {
+    println!("video_domain: {}", video_domain);
     match video_domain.as_str().into() {
         RedditContentType::AbsurdContent => {
             get_videos_collection(
