@@ -66,3 +66,31 @@ brew install ffmpeg tesseract
 # Example for Ubuntu/Debian:
 sudo apt update
 sudo apt install ffmpeg tesseract-ocr
+```
+
+## Configuration
+Create a .env file in the project root with your Reddit API credentials and YouTube API key:
+
+```bash 
+REDDIT_CLIENT_ID=your_client_id
+REDDIT_CLIENT_SECRET=your_client_secret
+REDDIT_USERNAME=your_username
+REDDIT_PASSWORD=your_password
+YOUTUBE_API_KEY=your_api_key
+```
+
+## Build
+```bash
+cargo build --release
+```
+
+## Usage 
+```bash
+cargo run -- --config ./config/Config.toml --dotenv ./config/.env --log-config ./config/log_config.yml
+```
+
+## TODO
+- Merge the videos
+- Upload it to YouTube
+- Figure out a way to automate 
+- Text to speech for memes

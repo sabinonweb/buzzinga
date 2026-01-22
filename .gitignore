@@ -5,6 +5,10 @@
 /log
 /media
 *.mp4
+*.txt
+*.mp3
+*.wav
+/src/media
 
 .env
 .DS_Store
