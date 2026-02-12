@@ -80,6 +80,28 @@ pub async fn download(dash_urls: Vec<String>) {
     for path in clip_paths {
         writeln!(list_file, "file {}", path).unwrap();
     }
+
+    let output_file = "/Users/sabinonweb/Documents/Projects/buzzinga/src/media/final.mp4";
+
+    let status = Command::new("ffmpeg")
+        .arg("-y")
+        .arg("-f")
+        .arg("concat")
+        .arg("-safe")
+        .arg("0")
+        .arg("-i")
+        .arg(list_path)
+        .arg("-c")
+        .arg("copy")
+        .arg(output_file)
+        .status()
+        .expect("Failed to combine clips");
+
+    if status.success() {
+        log::info!("All clips combined into {}", output_file);
+    } else {
+        log::error!("Failed to combine clips");
+    }
 }
 
 pub async fn downloader(
